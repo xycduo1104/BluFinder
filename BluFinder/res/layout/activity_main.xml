@@ -1,0 +1,64 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+	
+    <ToggleButton
+        android:id="@+id/serviceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp" />
+	    
+    <TextView
+        android:id="@+id/notifyText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/serviceButton"
+        android:checked="false"
+        android:textSize="16dp"
+        android:textStyle="bold"
+        android:layout_gravity="center" 
+        android:layout_marginTop="30dp"
+        android:text="How to notify:" />
+
+    <CheckBox
+        android:id="@+id/ringtoneCheck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/notifyText"
+        android:layout_below="@+id/notifyText"
+        android:layout_marginTop="10dp"
+        android:text="Ringtone" />
+
+    <CheckBox
+        android:id="@+id/vibrateCheck"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/ringtoneCheck"
+        android:layout_below="@+id/ringtoneCheck"
+        android:text="Vibrate" />
+
+    
+    <Button
+        android:id="@+id/ringtoneButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/vibrateCheck"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp"
+        android:text="Select Ringtone" />
+    
+    <Button
+        android:id="@+id/helpButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/ringtoneButton"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:text="Help" />
+
+</RelativeLayout>
