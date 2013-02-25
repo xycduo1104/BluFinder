@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
 	final private String RINGTONE_FOLDER = "/system/media/audio/ringtones";
 	
 	 private BluetoothAdapter mBluetoothAdapter = null;	//Bluetooth Adapter
+	 private Intent serviceIntent;
+	 
 	 
 
 	@Override
@@ -70,19 +72,22 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
                 	// start service
-                	
+                		//Check whether Bluetooth is paired to any device.
                 		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         				if(pairedDevices.size() == 0)
         				{
         					Toast.makeText(getBaseContext(), "Please pair device before starting service", Toast.LENGTH_LONG).show();
         					return;
         				}
-        				
-        				startService(new Intent(getBaseContext(),BluetoothAlertService.class));
+        				//Create Intent with checkboxes state and pass it to Service
+        				serviceIntent = new Intent(getBaseContext(),BluetoothAlertService.class);
+        				serviceIntent.putExtra("RINGTONE_CHECK_KEY",getCheckBoxStatus(RINGTONE_CHECK_KEY) );
+        				serviceIntent.putExtra("VIBRATE_CHECK_KEY", getCheckBoxStatus(VIBRATE_CHECK_KEY));
+        				startService(serviceIntent);
         				
         		 } else {
                 	// stop service
-        			 stopService(new Intent(getBaseContext(),BluetoothAlertService.class));            	
+        			 stopService(serviceIntent);            	
                 	
                 }  
             }  
@@ -105,6 +110,10 @@ public class MainActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
 				saveCheckBoxStatus(RINGTONE_CHECK_KEY, isChecked);
+				
+				Intent ringtone_intent = new Intent("RINGTONE_CHECKED_CHANGE");
+				ringtone_intent.putExtra("RINGTONE_CHECK_KEY", isChecked);
+				sendBroadcast(ringtone_intent);
 			}
 		});
 		
