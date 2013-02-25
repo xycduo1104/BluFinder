@@ -1,8 +1,11 @@
 package com.example.blufinder;
 
 import java.io.File;
+import java.util.Set;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -13,6 +16,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
 public class MainActivity extends Activity {
@@ -23,6 +27,9 @@ public class MainActivity extends Activity {
 	final private String RINGTONE_CHECK_KEY = "RingtoneChecked";
 	final private String VIBRATE_CHECK_KEY = "VibrateChecked";
 	final private String RINGTONE_FOLDER = "/system/media/audio/ringtones";
+	
+	 private BluetoothAdapter mBluetoothAdapter = null;	//Bluetooth Adapter
+	 
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +46,9 @@ public class MainActivity extends Activity {
 		// Set checkbox status
 		rtCheck.setChecked(getCheckBoxStatus(RINGTONE_CHECK_KEY));
 		vbCheck.setChecked(getCheckBoxStatus(VIBRATE_CHECK_KEY));
+		
+		//Set bluetooth Adapter
+		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		
 		// ringtoneButton listener
 		rtButton.setOnClickListener(new Button.OnClickListener() {
@@ -61,12 +71,18 @@ public class MainActivity extends Activity {
                 if (isChecked) {
                 	// start service
                 	
-                	
-                	
-                } else {
+                		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        				if(pairedDevices.size() == 0)
+        				{
+        					Toast.makeText(getBaseContext(), "Please pair device before starting service", Toast.LENGTH_LONG).show();
+        					return;
+        				}
+        				
+        				startService(new Intent(getBaseContext(),BluetoothAlertService.class));
+        				
+        		 } else {
                 	// stop service
-                	
-                	
+        			 stopService(new Intent(getBaseContext(),BluetoothAlertService.class));            	
                 	
                 }  
             }  
@@ -156,22 +172,8 @@ public class MainActivity extends Activity {
 		editor.commit();
 	}
 	
-	// Get current ringtone
-	private Uri getRingtoneUri(){
-		Uri rtUri;
-		String ringtoneUri = "";
-		Context cxt = getBaseContext();
-        SharedPreferences rtone = cxt.getSharedPreferences(SETTING, MODE_PRIVATE);
-        ringtoneUri = rtone.getString(RINGTONE_BUTTON_KEY, "");
-		if(ringtoneUri == ""){	//if no ringtone data found
-			//get system default ringtone
-			rtUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
-		}
-		else{
-			rtUri = Uri.parse(ringtoneUri);
-		}
-		return rtUri;
-	}
+	// Get current ringtone----Moved the method getRingtoneUri to service class --Sheetal
+
 	
 	// Save ringtone Uri
 	private void saveRingtoneUri(Uri pickedUri){
