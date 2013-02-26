@@ -77,13 +77,16 @@ public class MainActivity extends Activity {
         				if(pairedDevices.size() == 0)
         				{
         					Toast.makeText(getBaseContext(), "Please pair device before starting service", Toast.LENGTH_LONG).show();
+        					buttonView.toggle();
         					return;
+        				}else
+        				{
+	        				//Create Intent with checkboxes state and pass it to Service
+	        				serviceIntent = new Intent(getBaseContext(),BluetoothAlertService.class);
+	        				serviceIntent.putExtra("RINGTONE_CHECK_KEY",getCheckBoxStatus(RINGTONE_CHECK_KEY) );
+	        				serviceIntent.putExtra("VIBRATE_CHECK_KEY", getCheckBoxStatus(VIBRATE_CHECK_KEY));
+	        				startService(serviceIntent);
         				}
-        				//Create Intent with checkboxes state and pass it to Service
-        				serviceIntent = new Intent(getBaseContext(),BluetoothAlertService.class);
-        				serviceIntent.putExtra("RINGTONE_CHECK_KEY",getCheckBoxStatus(RINGTONE_CHECK_KEY) );
-        				serviceIntent.putExtra("VIBRATE_CHECK_KEY", getCheckBoxStatus(VIBRATE_CHECK_KEY));
-        				startService(serviceIntent);
         				
         		 } else {
                 	// stop service
@@ -122,6 +125,10 @@ public class MainActivity extends Activity {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView,boolean isChecked) {
 				saveCheckBoxStatus(VIBRATE_CHECK_KEY, isChecked);
+				
+				Intent vibrate_intent = new Intent("VIBRATE_CHECKED_CHANGE");
+				vibrate_intent.putExtra("VIBRATE_CHECK_KEY", isChecked);
+				sendBroadcast(vibrate_intent);
 			}
 		});
 		

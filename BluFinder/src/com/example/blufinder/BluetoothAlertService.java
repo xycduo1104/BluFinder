@@ -45,6 +45,7 @@ public class BluetoothAlertService extends Service{
 		IntentFilter filter_bluetoothAdapter_state = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
 		
 		IntentFilter filter_ringtone_checked_change = new IntentFilter("RINGTONE_CHECKED_CHANGE");
+		IntentFilter filter_vibrate_checked_change = new IntentFilter("VIBRATE_CHECKED_CHANGE");
 		
 		//Register Broadcast Receiver
 		registerReceiver(mReceiver, filter_disconnetced);
@@ -52,6 +53,7 @@ public class BluetoothAlertService extends Service{
 		registerReceiver(mReceiver, filter_bluetoothAdapter_state);
 		
 		registerReceiver(mRingtoneReceiver, filter_ringtone_checked_change);
+		registerReceiver(mRingtoneReceiver, filter_vibrate_checked_change);
 	}
 	
 	@Override
@@ -81,6 +83,8 @@ public class BluetoothAlertService extends Service{
     	unregisterReceiver(mRingtoneReceiver);
     }
     
+    
+  //Receiver for Bluetooth adapter state change and Bluetooth connection mode action
     private final BroadcastReceiver mReceiver = new BroadcastReceiver(){
 
 		@Override
@@ -117,6 +121,7 @@ public class BluetoothAlertService extends Service{
 				
 	};
 	
+	//Receiver for Ringtone checked change and vibrate checked change action
     private final BroadcastReceiver mRingtoneReceiver = new BroadcastReceiver(){
 
 		@Override
@@ -127,6 +132,10 @@ public class BluetoothAlertService extends Service{
 			if(action.equalsIgnoreCase("RINGTONE_CHECKED_CHANGE"))
 			{
 				ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", true);
+			}
+			if(action.equalsIgnoreCase("VIBRATE_CHECKED_CHANGE"))
+			{
+				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", true);
 			}
 			
 			
@@ -152,6 +161,7 @@ public class BluetoothAlertService extends Service{
 		return rtUri;
 	}
 	
+	//Push Notifications
 	public void setNotifications(String name)
 	{
       	Notification notification = builder.build();
@@ -163,6 +173,7 @@ public class BluetoothAlertService extends Service{
     	Toast.makeText(getBaseContext(), "Bluetooth Connection with "+name+" lost", Toast.LENGTH_LONG).show();
 	}
 	
+	//Create Notification Builder
 	private void createNotificationBuilder(String name, Boolean ringtoneCheck, Boolean vibrateCheck)
 	{
 		Intent resultIntent = new Intent(this, MainActivity.class);
