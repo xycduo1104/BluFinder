@@ -30,7 +30,7 @@ public class BluetoothAlertService extends Service{
 	
 	private NotificationCompat.Builder builder;
 	private Boolean ringtoneCheck = true;
-	private Boolean vibrateCheck;
+	private Boolean vibrateCheck= true;
 	
 	
 	@Override
@@ -59,8 +59,11 @@ public class BluetoothAlertService extends Service{
 	@Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 		
-		ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", true);
-		vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", true);
+		if(intent != null )
+		{
+			ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", false);
+			vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
+		}
         
         return mStartMode;
     }
@@ -110,10 +113,14 @@ public class BluetoothAlertService extends Service{
 			{
 				alarmManager = (AlarmManager)getBaseContext().getSystemService(ALARM_SERVICE);
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				createNotificationBuilder(device.getName(), ringtoneCheck, true);
+				createNotificationBuilder(device.getName(), ringtoneCheck, vibrateCheck);
 				setNotifications(device.getName());
 				
              }
+			else if(BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) 
+			{
+				
+			}
 			
 			
          }
@@ -131,11 +138,11 @@ public class BluetoothAlertService extends Service{
 			
 			if(action.equalsIgnoreCase("RINGTONE_CHECKED_CHANGE"))
 			{
-				ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", true);
+				ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", false);
 			}
 			if(action.equalsIgnoreCase("VIBRATE_CHECKED_CHANGE"))
 			{
-				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", true);
+				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
 			}
 			
 			
