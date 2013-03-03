@@ -28,29 +28,32 @@ public class MainActivity extends Activity {
 	final private String VIBRATE_CHECK_KEY = "VibrateChecked";
 	final private String RINGTONE_FOLDER = "/system/media/audio/ringtones";
 	
-	 private BluetoothAdapter mBluetoothAdapter = null;	//Bluetooth Adapter
-	 private Intent serviceIntent;
-	 
-	 
-
+	private BluetoothAdapter mBluetoothAdapter = null;	//Bluetooth Adapter
+	private Intent serviceIntent;
+	
+	private Button rtButton ;
+	private Button helpButton ;
+	private ToggleButton serviceButton;
+	private CheckBox rtCheck ;
+	private CheckBox vbCheck ;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
 		// Widgets
-		Button rtButton = (Button) findViewById(R.id.ringtoneButton);
-		Button helpButton = (Button) findViewById(R.id.helpButton);
-		ToggleButton serviceButton= (ToggleButton) findViewById(R.id.serviceButton);
-		CheckBox rtCheck = (CheckBox)findViewById(R.id.ringtoneCheck);
-		CheckBox vbCheck = (CheckBox)findViewById(R.id.vibrateCheck);
-		
-		// Set checkbox status
-		rtCheck.setChecked(getCheckBoxStatus(RINGTONE_CHECK_KEY));
-		vbCheck.setChecked(getCheckBoxStatus(VIBRATE_CHECK_KEY));
-		
+		rtButton = (Button) findViewById(R.id.ringtoneButton);
+		helpButton = (Button) findViewById(R.id.helpButton);
+		serviceButton= (ToggleButton) findViewById(R.id.serviceButton);
+		rtCheck = (CheckBox)findViewById(R.id.ringtoneCheck);
+		vbCheck = (CheckBox)findViewById(R.id.vibrateCheck);
+
+		// Set checkbox status-----moved this block to onResume method ---sheetal
+
 		//Set bluetooth Adapter
 		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		
 		
 		// ringtoneButton listener
 		rtButton.setOnClickListener(new Button.OnClickListener() {
@@ -58,8 +61,9 @@ public class MainActivity extends Activity {
             	if(existFolder(RINGTONE_FOLDER)){
             		// Open ringtone selector
             		Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
-					intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM);
+					intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_RINGTONE);
 					intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Ringtone");
+					intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, getRingtoneUri());
 					// Return ringtone URI to this activity
 					startActivityForResult(intent, 0);
             	}
@@ -70,13 +74,16 @@ public class MainActivity extends Activity {
 		serviceButton.setOnCheckedChangeListener(new ToggleButton.OnCheckedChangeListener() {  
             @Override  
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            	
+            	saveToggleStatus(serviceButton.isChecked());
+            	
                 if (isChecked) {
                 	// start service
                 		//Check whether Bluetooth is paired to any device.
                 		Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         				if(pairedDevices.size() == 0)
         				{
-        					Toast.makeText(getBaseContext(), "Please pair device before starting service", Toast.LENGTH_LONG).show();
+        					Toast.makeText(getBaseContext(), "Please pair device before starting service", Toast.LENGTH_SHORT).show();
         					buttonView.toggle();
         					return;
         				}else
@@ -86,26 +93,28 @@ public class MainActivity extends Activity {
 	        				serviceIntent.putExtra("RINGTONE_CHECK_KEY",getCheckBoxStatus(RINGTONE_CHECK_KEY) );
 	        				serviceIntent.putExtra("VIBRATE_CHECK_KEY", getCheckBoxStatus(VIBRATE_CHECK_KEY));
 	        				startService(serviceIntent);
+	        				Toast.makeText(getBaseContext(), "Service Started", Toast.LENGTH_SHORT).show();
         				}
         				
         		 } else {
-                	// stop service
-        			 stopService(serviceIntent);            	
-                	
-                }  
-            }  
-              
+                	 // stop service
+        			 stopService(serviceIntent);
+        			 Toast.makeText(getBaseContext(), "Service Stoped", Toast.LENGTH_SHORT).show();
+                }
+            }
+        
         });
 		
 		// helpButton listener
 		helpButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
             	// Show help info
-            	
-            	
-            	
+            	Intent helpActivity = new Intent(MainActivity.this, HelpActivity.class);
+            	startActivity(helpActivity);
+            	overridePendingTransition(R.anim.animation_enter,
+                        R.anim.animation_leave);
             }
-              
+        
         });
 		
 		// ringtone checkbox listener
@@ -171,11 +180,12 @@ public class MainActivity extends Activity {
 		return exist;
 	}
 	
+	// Get checkbox status
 	private boolean getCheckBoxStatus(String key){
 		boolean status;
 		Context cxt = getBaseContext();
-        SharedPreferences rtone = cxt.getSharedPreferences(SETTING, MODE_PRIVATE);
-        status = rtone.getBoolean(key, false);
+        SharedPreferences value = cxt.getSharedPreferences(SETTING, MODE_PRIVATE);
+        status = value.getBoolean(key, true);
 		return status;
 	}
 	
@@ -188,8 +198,41 @@ public class MainActivity extends Activity {
 		editor.commit();
 	}
 	
-	// Get current ringtone----Moved the method getRingtoneUri to service class --Sheetal
+	// Save ToggleButton status
+	private void saveToggleStatus(boolean checked){
+		Context ctx = getBaseContext();
+		SharedPreferences sta = ctx.getSharedPreferences(SETTING, MODE_PRIVATE);
+		SharedPreferences.Editor editor = sta.edit();
+		editor.putBoolean("TOGGLE_STATE", checked);
+		editor.commit();
+	}
 
+	
+	private boolean getToggleStatus(){
+		boolean status;
+		Context cxt = getBaseContext();
+        SharedPreferences rtone = cxt.getSharedPreferences(SETTING, MODE_PRIVATE);
+        status = rtone.getBoolean("TOGGLE_STATE", false);
+		return status;
+	}
+	
+	// Get current ringtone----Moved the method getRingtoneUri to service class --Sheetal
+	// Still need this method here to set default ringtone when open Ringtone Dialog  --Yachen
+	public Uri getRingtoneUri(){
+		Uri rtUri;
+		String ringtoneUri = "";
+		Context cxt = getBaseContext();
+        SharedPreferences rtone = cxt.getSharedPreferences(SETTING, MODE_PRIVATE);
+        ringtoneUri = rtone.getString(RINGTONE_BUTTON_KEY, "");
+		if(ringtoneUri == ""){	//if no ringtone data found
+			//get system default ringtone
+			rtUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+		}
+		else{
+			rtUri = Uri.parse(ringtoneUri);
+		}
+		return rtUri;
+	}
 	
 	// Save ringtone Uri
 	private void saveRingtoneUri(Uri pickedUri){
@@ -199,6 +242,31 @@ public class MainActivity extends Activity {
 		editor.putString(RINGTONE_BUTTON_KEY, pickedUri.toString());
 		editor.commit();
 	}
+	
+	@Override
+	protected void onPause() {
+
+		super.onPause();
+		//Save current values to shared preferences
+		saveCheckBoxStatus("RINGTONE_CHECK_KEY", rtCheck.isChecked());
+		saveCheckBoxStatus("VIBRATE_CHECK_KEY", vbCheck.isChecked());
+		saveToggleStatus(serviceButton.isChecked());
+	}
+
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+			//Get values from shared preferences
+			rtCheck.setChecked(getCheckBoxStatus(RINGTONE_CHECK_KEY));
+			vbCheck.setChecked(getCheckBoxStatus(VIBRATE_CHECK_KEY));
+
+			if(mBluetoothAdapter.isEnabled())
+				serviceButton.setChecked(getToggleStatus());
+			else
+				serviceButton.setChecked(false);
+	}
+	
 	// disable options menu
 //	@Override
 //	public boolean onCreateOptionsMenu(Menu menu) {
@@ -207,6 +275,4 @@ public class MainActivity extends Activity {
 //		return true;
 //	}
 	
-	
-
 }

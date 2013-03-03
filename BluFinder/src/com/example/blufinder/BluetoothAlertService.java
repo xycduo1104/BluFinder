@@ -24,43 +24,46 @@ public class BluetoothAlertService extends Service{
 	private IBinder mBinder;
 	private boolean mAllowRebind;
 	private AlarmManager alarmManager;
-	
+
 	final private String SETTING = "Setting";			// User settings
 	final private String RINGTONE_BUTTON_KEY = "Ringtone";
-	
+
 	private NotificationCompat.Builder builder;
 	private Boolean ringtoneCheck = true;
-	private Boolean vibrateCheck;
-	
-	
+	private Boolean vibrateCheck= true;
+
+
 	@Override
 	public void onCreate() {
-		
+
 		super.onCreate();
-		
-		
-		
+
+
+
 		IntentFilter filter_disconnetced = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		IntentFilter filter_disconnected_requested= new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		IntentFilter filter_bluetoothAdapter_state = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-		
+
 		IntentFilter filter_ringtone_checked_change = new IntentFilter("RINGTONE_CHECKED_CHANGE");
 		IntentFilter filter_vibrate_checked_change = new IntentFilter("VIBRATE_CHECKED_CHANGE");
-		
+
 		//Register Broadcast Receiver
 		registerReceiver(mReceiver, filter_disconnetced);
 		registerReceiver(mReceiver, filter_disconnected_requested);
 		registerReceiver(mReceiver, filter_bluetoothAdapter_state);
-		
+
 		registerReceiver(mRingtoneReceiver, filter_ringtone_checked_change);
 		registerReceiver(mRingtoneReceiver, filter_vibrate_checked_change);
 	}
-	
+
 	@Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-		
-		ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", true);
-		vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", true);
+
+		if(intent != null )
+		{
+			ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", false);
+			vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
+		}
         
         return mStartMode;
     }
@@ -89,9 +92,9 @@ public class BluetoothAlertService extends Service{
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			
+
 			String action = intent.getAction();
-			
+
 			if(BluetoothAdapter.ACTION_STATE_CHANGED.equals(action))
 			{
 				int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
@@ -110,40 +113,44 @@ public class BluetoothAlertService extends Service{
 			{
 				alarmManager = (AlarmManager)getBaseContext().getSystemService(ALARM_SERVICE);
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				createNotificationBuilder(device.getName(), ringtoneCheck, true);
+				createNotificationBuilder(device.getName(), ringtoneCheck, vibrateCheck);
 				setNotifications(device.getName());
-				
+
              }
-			
-			
+			else if(BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) 
+			{
+
+			}
+
+
          }
-			
-				
+
+
 	};
-	
+
 	//Receiver for Ringtone checked change and vibrate checked change action
     private final BroadcastReceiver mRingtoneReceiver = new BroadcastReceiver(){
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			
+
 			String action = intent.getAction();
-			
+
 			if(action.equalsIgnoreCase("RINGTONE_CHECKED_CHANGE"))
 			{
-				ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", true);
+				ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", false);
 			}
 			if(action.equalsIgnoreCase("VIBRATE_CHECKED_CHANGE"))
 			{
-				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", true);
+				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
 			}
-			
-			
+
+
          }
-			
-				
+
+
 	};
-	
+
 	// Get current ringtone
 	public Uri getRingtoneUri(){
 		Uri rtUri;
@@ -160,7 +167,7 @@ public class BluetoothAlertService extends Service{
 		}
 		return rtUri;
 	}
-	
+
 	//Push Notifications
 	public void setNotifications(String name)
 	{
@@ -172,15 +179,15 @@ public class BluetoothAlertService extends Service{
     	
     	Toast.makeText(getBaseContext(), "Bluetooth Connection with "+name+" lost", Toast.LENGTH_LONG).show();
 	}
-	
+
 	//Create Notification Builder
 	private void createNotificationBuilder(String name, Boolean ringtoneCheck, Boolean vibrateCheck)
 	{
 		Intent resultIntent = new Intent(this, MainActivity.class);
-		
+
 		Uri notificationRingone = getRingtoneUri();
 		 long[] vibrate = new long[]{100, 200, 100, 500};
-		
+
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
     	
 		PendingIntent resultPendingIntent = PendingIntent.getActivity(this, 0, resultIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -196,16 +203,14 @@ public class BluetoothAlertService extends Service{
 			builder.setSound(notificationRingone);
 		if(vibrateCheck)
 			builder.setVibrate(vibrate);
-		
+
 		builder.setContentIntent(resultPendingIntent);
     	 		
-		
+
 	}
-	
-	
-		  
-		 
+
+
+
+
 
 }
-
-
