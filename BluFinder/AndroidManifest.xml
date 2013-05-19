@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.blufinder"
-    android:versionCode="1"
-    android:versionName="1.0" >
+    package="com.polypresents.blufinder"
+    android:versionCode="2"
+    android:versionName="1.0.1" >
 
     <uses-sdk
         android:minSdkVersion="8"
@@ -11,15 +11,25 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <supports-screens
+        android:resizeable="false"
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:label="@string/app_name" >
+        
         <activity
-            android:name="com.example.blufinder.SplashActivity"
-            android:label="@string/app_name" >
+            android:name="com.polypresents.blufinder.SplashActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -27,22 +37,27 @@
         </activity>
         
         <activity
-            android:name="com.example.blufinder.MainActivity"
+            android:name="com.polypresents.blufinder.MainActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
         </activity>
         
         <activity
-            android:name="com.example.blufinder.HelpActivity"
+            android:name="com.polypresents.blufinder.HelpActivity"
             android:label="@string/title_activity_help"
             android:screenOrientation="portrait" >
         </activity>
+        
+        <activity 
+            android:name="com.polypresents.blufinder.AlertActivity"
+          	android:theme="@style/AlertTheme">
+		</activity>
 
         <service
-            android:name="com.example.blufinder.BluetoothAlertService"
+            android:name="com.polypresents.blufinder.BluetoothAlertService"
             android:label="Bluetooth Alert Service" >
         </service>
-        
+
     </application>
 
 </manifest>

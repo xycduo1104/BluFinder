@@ -1,4 +1,4 @@
-package com.example.blufinder;
+package com.polypresents.blufinder;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -15,15 +15,19 @@ import android.content.SharedPreferences;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.IBinder;
+import android.os.Binder;
+import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
-import android.widget.Toast;
+
 
 public class BluetoothAlertService extends Service{
 
 	private int mStartMode;
-	private IBinder mBinder;
+	private IBinder mBinder = new LocalBinder();
 	private boolean mAllowRebind;
 	private AlarmManager alarmManager;
+    private PowerManager.WakeLock wl;
+	Intent dialogIntent;
 
 	final private String SETTING = "Setting";			// User settings
 	final private String RINGTONE_BUTTON_KEY = "Ringtone";
@@ -32,14 +36,10 @@ public class BluetoothAlertService extends Service{
 	private Boolean ringtoneCheck = true;
 	private Boolean vibrateCheck= true;
 
-
 	@Override
 	public void onCreate() {
 
 		super.onCreate();
-
-
-
 		IntentFilter filter_disconnetced = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		IntentFilter filter_disconnected_requested= new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		IntentFilter filter_bluetoothAdapter_state = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
@@ -54,6 +54,13 @@ public class BluetoothAlertService extends Service{
 
 		registerReceiver(mRingtoneReceiver, filter_ringtone_checked_change);
 		registerReceiver(mRingtoneReceiver, filter_vibrate_checked_change);
+
+        /**
+         * Wakelock: keep service running when system sleeps
+         */
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wl = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP|PowerManager.PARTIAL_WAKE_LOCK, "Wake Lock");
+        wl.acquire();
 	}
 
 	@Override
@@ -64,13 +71,12 @@ public class BluetoothAlertService extends Service{
 			ringtoneCheck = intent.getBooleanExtra("RINGTONE_CHECK_KEY", false);
 			vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
 		}
-        
         return mStartMode;
     }
     @Override
     public IBinder onBind(Intent intent) {
         // A client is binding to the service with bindService()
-        return null;
+        return mBinder;
     }
     @Override
     public boolean onUnbind(Intent intent) {
@@ -80,14 +86,25 @@ public class BluetoothAlertService extends Service{
     
     @Override
     public void onDestroy() {
-    	
     	super.onDestroy();
+        wl.release();
     	unregisterReceiver(mReceiver);
     	unregisterReceiver(mRingtoneReceiver);
     }
+
+
+    /**
+     * Class used for the client Binder.
+     */
+    public class LocalBinder extends Binder {
+        BluetoothAlertService getService() {
+            // Return this instance of LocalService so clients can call public methods
+            return BluetoothAlertService.this;
+        }
+    }
+
     
-    
-  //Receiver for Bluetooth adapter state change and Bluetooth connection mode action
+    //Receiver for Bluetooth adapter state change and Bluetooth connection mode action
     private final BroadcastReceiver mReceiver = new BroadcastReceiver(){
 
 		@Override
@@ -101,30 +118,33 @@ public class BluetoothAlertService extends Service{
 				switch(state)
 				{
 					case BluetoothAdapter.STATE_OFF:
-		                stopSelf();
+                        /**
+                         * keep service running until all activities are unbind,
+                         * and service will automatic terminate
+                         */
+		                //stopSelf();
 		                break;
 		            case BluetoothAdapter.STATE_TURNING_OFF:
-		            	 stopSelf();
+		            	//stopSelf();
 		                break;
 				}
 			}
-			else if(BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action) || 
+			else if(BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action) ||
 					BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action))
 			{
 				alarmManager = (AlarmManager)getBaseContext().getSystemService(ALARM_SERVICE);
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				createNotificationBuilder(device.getName(), ringtoneCheck, vibrateCheck);
 				setNotifications(device.getName());
-
-             }
-			else if(BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) 
-			{
-
-			}
-
-
+				
+				/*
+				 * Create AlertDialog here
+				 */
+				dialogIntent = new Intent(getBaseContext(), AlertActivity.class);
+				dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				getApplication().startActivity(dialogIntent);
+            }
          }
-
 
 	};
 
@@ -145,9 +165,7 @@ public class BluetoothAlertService extends Service{
 				vibrateCheck = intent.getBooleanExtra("VIBRATE_CHECK_KEY", false);
 			}
 
-
-         }
-
+            }
 
 	};
 
@@ -177,7 +195,7 @@ public class BluetoothAlertService extends Service{
     	NotificationManager nfmanager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
     	nfmanager.notify(1,notification);
     	
-    	Toast.makeText(getBaseContext(), "Bluetooth Connection with "+name+" lost", Toast.LENGTH_LONG).show();
+    	//Toast.makeText(getBaseContext(), "Bluetooth Connection with "+name+" lost", Toast.LENGTH_LONG).show();
 	}
 
 	//Create Notification Builder
@@ -185,8 +203,12 @@ public class BluetoothAlertService extends Service{
 	{
 		Intent resultIntent = new Intent(this, MainActivity.class);
 
-		Uri notificationRingone = getRingtoneUri();
-		 long[] vibrate = new long[]{100, 200, 100, 500};
+		
+		/*
+		 * Disable ringtone & vibration in notification and use AlertActivity instead
+		 */
+//		Uri notificationRingone = getRingtoneUri();
+//		long[] vibrate = new long[]{100, 200, 100, 500};
 
 		resultIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
     	
@@ -198,19 +220,15 @@ public class BluetoothAlertService extends Service{
     	.setContentText("Bluetooth Connection with the remote device "+name+" is lost")
     	.setAutoCancel(true)
     	.setOnlyAlertOnce(false);
-    	    	
-		if(ringtoneCheck)
-			builder.setSound(notificationRingone);
-		if(vibrateCheck)
-			builder.setVibrate(vibrate);
+    	
+//		if(ringtoneCheck)
+//			builder.setSound(notificationRingone);
+//		if(vibrateCheck)
+//			builder.setVibrate(vibrate);
 
 		builder.setContentIntent(resultPendingIntent);
-    	 		
-
+    	
 	}
-
-
-
-
+	
 
 }

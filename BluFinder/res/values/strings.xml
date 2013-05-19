@@ -4,5 +4,9 @@
     <string name="app_name">BluFinder</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_help">Help</string>
+    <string name="text1">The app monitors paired Bluetooth device and reminds user when the device is out of range or disconnected.\n\n</string>
+    <string name="text2">Make sure your Bluetooth device is paired then press the power button to start service. After the service is started, you can quit the app and the service will be running in the background.\n\n</string>
+    <string name="text3">Check ringtone or vibrate checkboxes to choose how you want to be notified when the paired device is disconnected.\n\n</string>
+    <string name="text4">Click on &quot;Select Ringtone&quot; to choose a ringtone that is played when the paired device is disconnected.\n\n</string>
 
 </resources>
